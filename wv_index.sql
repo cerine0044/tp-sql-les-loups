@@ -1,48 +1,50 @@
--- Fichier : wv_index.sql
--- Objectif : Ajout de contraintes et améliorations sur le schéma initial du jeu "Les Loups"
+-- ==========================================
+-- Améliorations du schéma SQL – Les Loups
+-- Cerine AZIZ – EPSI B3
+-- ==========================================
 
--- ============================
--- CONTRAINTES D’INTÉGRITÉ
--- ============================
+-- ========================
+-- AJOUT DES CLÉS PRIMAIRES
+-- ========================
+ALTER TABLE parties ADD CONSTRAINT pk_parties PRIMARY KEY (id_party);
+ALTER TABLE roles ADD CONSTRAINT pk_roles PRIMARY KEY (id_role);
+ALTER TABLE players ADD CONSTRAINT pk_players PRIMARY KEY (id_player);
+ALTER TABLE turns ADD CONSTRAINT pk_turns PRIMARY KEY (id_turn);
+ALTER TABLE players_in_parties ADD CONSTRAINT pk_players_in_parties PRIMARY KEY (id_party, id_player);
+ALTER TABLE players_play ADD CONSTRAINT pk_players_play PRIMARY KEY (id_player, id_turn);
 
--- Exemple : empêcher les doublons dans les identifiants joueurs
-ALTER TABLE Joueurs
-ADD CONSTRAINT uq_identifiant UNIQUE (identifiant);
+-- ========================
+-- AJOUT DES CLÉS ÉTRANGÈRES
+-- ========================
+ALTER TABLE players_in_parties
+ADD CONSTRAINT fk_pip_party FOREIGN KEY (id_party) REFERENCES parties(id_party),
+    CONSTRAINT fk_pip_player FOREIGN KEY (id_player) REFERENCES players(id_player),
+    CONSTRAINT fk_pip_role FOREIGN KEY (id_role) REFERENCES roles(id_role);
 
--- Exemple : relation entre Joueurs et Partie (FK)
-ALTER TABLE Joueurs
-ADD CONSTRAINT fk_joueurs_partie FOREIGN KEY (id_partie)
-REFERENCES Partie(id_partie);
+ALTER TABLE turns
+ADD CONSTRAINT fk_turns_party FOREIGN KEY (id_party) REFERENCES parties(id_party);
 
--- Exemple : relation entre Position et Joueur
-ALTER TABLE Position
-ADD CONSTRAINT fk_position_joueur FOREIGN KEY (id_joueur)
-REFERENCES Joueurs(id_joueur);
+ALTER TABLE players_play
+ADD CONSTRAINT fk_pp_player FOREIGN KEY (id_player) REFERENCES players(id_player),
+    CONSTRAINT fk_pp_turn FOREIGN KEY (id_turn) REFERENCES turns(id_turn);
 
--- ============================
--- VALIDATIONS MÉTIER
--- ============================
+-- ========================
+-- CONTRAINTES D’UNICITÉ
+-- ========================
+ALTER TABLE players
+ADD CONSTRAINT uq_players_pseudo UNIQUE (pseudo);
 
--- Interdire que deux entités soient sur la même case (position unique par case et tour)
-ALTER TABLE Position
-ADD CONSTRAINT uq_case_par_tour UNIQUE (x, y, id_tour);
+-- ========================
+-- CONTRAINTES DE VALIDATION MÉTIER
+-- ========================
+ALTER TABLE players_in_parties
+ADD CONSTRAINT chk_is_alive CHECK (is_alive IN ('yes', 'no'));
 
--- Assurer qu’un joueur a un rôle défini
-ALTER TABLE Joueurs
-ADD CONSTRAINT chk_role_valide CHECK (role IN ('loup', 'villageois'));
+ALTER TABLE roles
+ADD CONSTRAINT chk_roles_description CHECK (description_role IN ('loup', 'villageois'));
 
--- ============================
--- AJUSTEMENTS DE TYPES
--- ============================
-
--- Exemple : étendre la longueur du champ 'identifiant'
-ALTER TABLE Joueurs
-ALTER COLUMN identifiant VARCHAR(100);
-
--- ============================
--- MISE EN FORME
--- ============================
-
--- Ajouter une date de création automatique à la partie
-ALTER TABLE Partie
-ADD date_creation DATETIME DEFAULT GETDATE();
+-- ========================
+-- CHAMP DATE PAR DÉFAUT
+-- ========================
+ALTER TABLE parties
+ADD created_at DATETIME DEFAULT GETDATE();
